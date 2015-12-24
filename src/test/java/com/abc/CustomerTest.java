@@ -1,23 +1,29 @@
 package com.abc;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+import java.math.BigDecimal;
 
 public class CustomerTest {
 
     @Test //Test customer statement generation
-    public void testApp(){
+    public void testCustomerStatement(){
 
         Account checkingAccount = new Account(Account.CHECKING);
         Account savingsAccount = new Account(Account.SAVINGS);
 
         Customer henry = new Customer("Henry").openAccount(checkingAccount).openAccount(savingsAccount);
 
-        checkingAccount.deposit(100.0);
-        savingsAccount.deposit(4000.0);
-        savingsAccount.withdraw(200.0);
+        checkingAccount.deposit(BigDecimal.valueOf(100));
+        savingsAccount.deposit(BigDecimal.valueOf(4000));
+        try {
+        	savingsAccount.withdraw(BigDecimal.valueOf(200));
+        } catch(InsufficientFundsException e) {
+        	fail();
+        }
 
         assertEquals("Statement for Henry\n" +
                 "\n" +
@@ -47,11 +53,12 @@ public class CustomerTest {
         assertEquals(2, oscar.getNumberOfAccounts());
     }
 
-    @Ignore
+    @Test
     public void testThreeAcounts() {
         Customer oscar = new Customer("Oscar")
                 .openAccount(new Account(Account.SAVINGS));
         oscar.openAccount(new Account(Account.CHECKING));
+        oscar.openAccount(new Account(Account.MAXI_SAVINGS));
         assertEquals(3, oscar.getNumberOfAccounts());
     }
 }

@@ -1,5 +1,6 @@
 package com.abc;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,57 +18,65 @@ public class Account {
         this.transactions = new ArrayList<Transaction>();
     }
 
-    public void deposit(double amount) {
-        if (amount <= 0) {
+    public void deposit(BigDecimal amount) {
+        if (amount.signum() <= 0) {
             throw new IllegalArgumentException("amount must be greater than zero");
         } else {
             transactions.add(new Transaction(amount));
         }
     }
 
-public void withdraw(double amount) {
-    if (amount <= 0) {
+public void withdraw(BigDecimal amount) throws InsufficientFundsException {
+    if (amount.signum() <= 0) {
         throw new IllegalArgumentException("amount must be greater than zero");
     } else {
-        transactions.add(new Transaction(-amount));
+    	if(this.sumTransactions().compareTo(amount) > 0)
+    		transactions.add(new Transaction(amount.negate()));
+    	else
+    		throw new InsufficientFundsException(amount, this);
     }
 }
 
-    public double interestEarned() {
-        double amount = sumTransactions();
+    public BigDecimal interestEarned() {
+        BigDecimal amount = sumTransactions();
         switch(accountType){
             case SAVINGS:
-                if (amount <= 1000)
-                    return amount * 0.001;
+                if (amount.compareTo(BigDecimal.valueOf(1000)) <= 0)
+                    return amount.multiply(BigDecimal.valueOf(0.001));
                 else
-                    return 1 + (amount-1000) * 0.002;
+                    return amount.subtract(BigDecimal.valueOf(1000)).multiply(BigDecimal.valueOf(0.002)).add(BigDecimal.ONE);
 //            case SUPER_SAVINGS:
 //                if (amount <= 4000)
 //                    return 20;
             case MAXI_SAVINGS:
-                if (amount <= 1000)
-                    return amount * 0.02;
-                if (amount <= 2000)
-                    return 20 + (amount-1000) * 0.05;
-                return 70 + (amount-2000) * 0.1;
+                if (amount.compareTo(BigDecimal.valueOf(1000)) <= 0)
+                    return amount.multiply(BigDecimal.valueOf(0.02));
+                if (amount.compareTo(BigDecimal.valueOf(2000)) <= 0)
+                    return amount.subtract(BigDecimal.valueOf(1000)).multiply(BigDecimal.valueOf(0.05)).add(BigDecimal.valueOf(20));
+                return amount.subtract(BigDecimal.valueOf(2000)).multiply(BigDecimal.valueOf(0.1)).add(BigDecimal.valueOf(70));
             default:
-                return amount * 0.001;
+                return amount.multiply(BigDecimal.valueOf(0.001));
         }
     }
 
-    public double sumTransactions() {
-       return checkIfTransactionsExist(true);
-    }
-
-    private double checkIfTransactionsExist(boolean checkAll) {
-        double amount = 0.0;
+    public BigDecimal sumTransactions() {
+    	BigDecimal amount = BigDecimal.ZERO;
         for (Transaction t: transactions)
-            amount += t.amount;
+            amount = amount.add(t.amount);
         return amount;
     }
 
     public int getAccountType() {
         return accountType;
     }
+
+	public void transferTo(Account anotherAccount, BigDecimal amount) throws InsufficientFundsException {
+	    if (anotherAccount == this) {
+	        throw new IllegalArgumentException("cannot transfer to the same account");
+	    } else {
+	    	withdraw(amount);
+    		anotherAccount.deposit(amount);
+	    }
+	}
 
 }
